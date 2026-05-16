@@ -72,6 +72,8 @@
 
 8. 把 pi-mono 改造成 你的 OpenClaw（阅读约1小时）
    - git clone https://github.com/badlogic/pi-mono.git
+   - cd pi-mono && git checkout 3ffc2b43
+   - 注意：pi-mono 在 2026-04-30 的 0ed0d434 提交移除了 packages/mom，下面的 mom 改造和 Slack 接入方式都依赖旧版 mom，所以需要 checkout 到移除前的提交
    - 安装 pm2: 后台长期运行且崩溃后自动重启 `npm install -g pm2`
    - 因为pi-mono写了hardcode强制用sonnet-4.5，我们要自定义模型的BASE_URL和模型id，所以修改./pi-mono/packages/mom/src/agent.ts，`const model = getModel("anthropic", "claude-sonnet-4-5");`在这行下面写
 ```
@@ -84,7 +86,7 @@ export ANTHROPIC_MODEL_ID=kimi-k2.5
 export ANTHROPIC_BASE_URL=https://api.moonshot.cn/anthropic
 export ANTHROPIC_API_KEY=sk-m7q...
 ```
-   - 参考 im 接入方式[slack-bot-minimal-guide](https://github.com/badlogic/pi-mono/blob/main/packages/mom/docs/slack-bot-minimal-guide.md)，后面会更新飞书接入方式
+   - 参考 im 接入方式[slack-bot-minimal-guide](https://github.com/badlogic/pi-mono/blob/3ffc2b43/packages/mom/docs/slack-bot-minimal-guide.md)，后面会更新飞书接入方式
    - 运行`npm install`，然后启动`pm2 start packages/mom/dist/main.js --name mom --interpreter node -- --sandbox=host ./packages/mom/data`
    - 恭喜你！你已经打造了属于你自己的OpenClaw，你可以去到Slack上与你的OpenClaw聊
 

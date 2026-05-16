@@ -66,6 +66,8 @@ It can also help you land an agent-related job or internship. Quite a few studen
 
 8. Turn pi-mono into your own OpenClaw (about 1 hour)
    - `git clone https://github.com/badlogic/pi-mono.git`
+   - `cd pi-mono && git checkout 3ffc2b43`
+   - Note: pi-mono removed `packages/mom` in commit `0ed0d434` on 2026-04-30. The mom customization and Slack integration below depend on the old mom package, so you need to check out the commit right before that removal.
    - Install pm2 for long-running background processes and automatic restarts: `npm install -g pm2`
    - Because pi-mono hardcodes `sonnet-4.5`, if you want to use a custom model `BASE_URL` and model id, edit `./pi-mono/packages/mom/src/agent.ts` and add the following right below `const model = getModel("anthropic", "claude-sonnet-4-5");`
 ```
@@ -78,7 +80,7 @@ export ANTHROPIC_MODEL_ID=kimi-k2.5
 export ANTHROPIC_BASE_URL=https://api.moonshot.cn/anthropic
 export ANTHROPIC_API_KEY=sk-m7q...
 ```
-   - Refer to this IM integration guide: [slack-bot-minimal-guide](https://github.com/badlogic/pi-mono/blob/main/packages/mom/docs/slack-bot-minimal-guide.md). A Feishu integration guide will be added later.
+   - Refer to this IM integration guide: [slack-bot-minimal-guide](https://github.com/badlogic/pi-mono/blob/3ffc2b43/packages/mom/docs/slack-bot-minimal-guide.md). A Feishu integration guide will be added later.
    - In `pi-mono`, run `npm install`, then start it with `pm2 start packages/mom/dist/main.js --name mom --interpreter node -- --sandbox=host ./packages/mom/data`
    - Congratulations. You have now built your own OpenClaw, and you can chat with it on Slack.
 
