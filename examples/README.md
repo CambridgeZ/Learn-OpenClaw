@@ -8,6 +8,7 @@
 examples/
 ├── chatbot/              # 简单对话机器人
 ├── chatbot_with_tools/   # 带工具调用的对话机器人
+├── chatbot_with_memory/  # 带记忆管理的对话机器人
 └── workflow/             # 工作流示例
 ```
 
@@ -81,6 +82,40 @@ flowchart LR
 
 ---
 
+### 4. Chatbot with Memory - 带记忆管理的对话机器人
+
+演示如何把用户消息、助手回复和工具结果保存到 `chat_memory/session.jsonl`，并在上下文接近上限时自动压缩旧消息。
+
+```bash
+python examples/chatbot_with_memory/main.py
+```
+
+**流程图:**
+
+```mermaid
+flowchart TD
+    User[用户输入] --> MemoryUser[Memory<br/>保存用户消息]
+    MemoryUser --> Chat[ChatNode<br/>构建上下文并调用 LLM]
+    Chat --> MemoryAssistant[Memory<br/>保存助手消息]
+    MemoryAssistant -->|tool_calls| Tool[ToolCallNode<br/>执行工具]
+    Tool --> MemoryTool[Memory<br/>保存工具结果]
+    MemoryTool --> Chat
+    MemoryAssistant -->|final answer| Output[OutputNode<br/>输出回答]
+    MemoryAssistant -->|token 超过阈值| Compress[Memory.compress<br/>压缩旧消息]
+
+    style MemoryUser fill:#e8f5e9,stroke:#333
+    style MemoryAssistant fill:#e8f5e9,stroke:#333
+    style MemoryTool fill:#e8f5e9,stroke:#333
+    style Compress fill:#fff3e0,stroke:#333
+```
+
+**记忆文件:**
+
+- `chat_memory/session.jsonl`: 追加保存完整对话消息。
+- `chat_memory/MEMORY.md`: 保存长期有用的信息，例如用户偏好、关键事实和运行环境。
+
+---
+
 ## Node 核心概念
 
 ### 基本 Node
@@ -116,7 +151,7 @@ node_b >> node_d
 
 ```mermaid
 flowchart LR
-    Input[输入列表<br/>[a,b,c]] --> Batch[BatchNode]
+    Input["输入列表<br/>[a,b,c]"] --> Batch[BatchNode]
     Batch -->|串行处理| R1[结果1]
     Batch -->|串行处理| R2[结果2]
     Batch -->|串行处理| R3[结果3]
@@ -126,7 +161,7 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    Input[输入列表<br/>[a,b,c]] --> Parallel[ParallelBatchNode]
+    Input["输入列表<br/>[a,b,c]"] --> Parallel[ParallelBatchNode]
     Parallel -->|并行| R1[结果1]
     Parallel -->|并行| R2[结果2]
     Parallel -->|并行| R3[结果3]

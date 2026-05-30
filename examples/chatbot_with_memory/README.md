@@ -39,7 +39,7 @@ python examples/chatbot_with_memory/main.py
 2. 程序把 system prompt、长期记忆、历史对话一起传给 LLM。
 3. 如果 LLM 返回 `tool_calls`，程序先保存这条助手消息，再执行工具，并把工具结果也写入记忆。
 4. 工具执行完后，再次调用 LLM，直到得到最终文字回复。
-5. 最终回复会进入 `after_llm_response()`：保存助手回复、读取本次 token 用量、判断是否需要压缩。
-6. 如果 token 数超过阈值，就压缩较早的消息。压缩时会避免拆开一次完整的工具调用消息组。
+5. 最终回复也会通过 `add_message()` 保存，并读取这次 LLM 返回的 token 数。
+6. 如果 token 数超过阈值，就自动压缩较早的消息。压缩时会避免拆开一次完整的工具调用消息组。
 
 简单理解：`session.jsonl` 负责保存聊天过程，`MEMORY.md` 负责保存长期有用的信息，自动压缩负责防止上下文越来越长。

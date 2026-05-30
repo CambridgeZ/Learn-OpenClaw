@@ -30,12 +30,11 @@ class ChatNode(Node):
 
         messages = memory.build_context(system_prompt=SYSTEM_PROMPT)
         assistant_message = call_llm(messages=messages, tools=tools)
+        memory.add_message(assistant_message)
 
         if assistant_message.get("tool_calls"):
-            memory.add_raw_message(assistant_message)
             return "tool_call", assistant_message
 
-        memory.after_llm_response(assistant_message)
         return "output", assistant_message
 
 
@@ -53,13 +52,13 @@ class ToolCallNode(Node):
         for tc, result in zip(tool_calls, results):
             print(f"  [Tool] 执行: {tc.name}({tc.arguments})")
             print(f"  [Tool] 结果: {result.content[:100]}...")
-            memory.add_raw_message(result.to_message())
+            memory.add_message(result.to_message())
 
         return "chat", None
 
 
 class OutputNode(Node):
-    """输出助手回复，并通过 Memory 回调自动管理上下文"""
+    """输出助手回复"""
 
     def exec(self, payload: Any) -> Tuple[str, Any]:
         response = payload
@@ -101,7 +100,7 @@ def run_chat() -> None:
         if not user_input:
             continue
 
-        shared["memory"].add_message("user", user_input)
+        shared["memory"].add_message({"role": "user", "content": user_input})
         flow = Flow(chat)
         flow.run(None)
 

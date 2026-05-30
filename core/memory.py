@@ -25,7 +25,6 @@ class Memory:
             LONG_TERM_MEMORY_FILEPATH.write_text(LONG_TERM_MEMORY_HEADER, encoding="utf-8")
 
         self.messages: list[dict[str, Any]] = []
-        self.last_usage_total = 0
 
         if MEMORY_FILEPATH.exists():
             for line in MEMORY_FILEPATH.read_text(encoding="utf-8").splitlines():
@@ -57,22 +56,17 @@ class Memory:
                 for message in self.messages:
                     f.write(json.dumps(message, ensure_ascii=False) + "\n")
 
-    def add_message(self, role: str, content: str):
-        """添加一条普通消息，例如 user 或 assistant 的纯文本消息。"""
-        self.add_raw_message({"role": role, "content": content})
-
-    def add_raw_message(self, message: dict[str, Any]):
-        """添加一条原始 message，并立刻追加写入 session.jsonl。"""
+    def add_message(self, message: dict[str, Any]):
+        """添加一条 message，写入 session.jsonl，并在最终助手回复后按需压缩。"""
+        total_tokens = message.get("usage", {}).get("total_tokens", 0)
+        should_compress = total_tokens > 0 and not message.get("tool_calls")
         message = {key: value for key, value in message.items() if key in MESSAGE_KEYS}
         self.messages.append(message)
         with MEMORY_FILEPATH.open("a", encoding="utf-8") as f:
             f.write(json.dumps(message, ensure_ascii=False) + "\n")
 
-    def after_llm_response(self, assistant_message: dict[str, Any]):
-        """保存 LLM 回复，并根据 usage 判断是否需要压缩上下文。"""
-        self.add_raw_message(assistant_message)
-        self.last_usage_total = assistant_message.get("usage", {}).get("total_tokens", 0)
-        self.compress()
+        if should_compress:
+            self.compress(total_tokens)
 
     def build_context(self, system_prompt: str = "") -> list[dict[str, Any]]:
         """组装传给 LLM 的 messages，必要时把长期记忆放进 system prompt。"""
@@ -93,9 +87,9 @@ class Memory:
 
         return [system_message, *self.messages]
 
-    def compress(self):
+    def compress(self, total_tokens: int):
         """当上下文接近上限时，把较早消息压缩成摘要，并保留最近几条消息。"""
-        if self.last_usage_total <= MAX_CONTEXT_LENGTH * COMPRESS_THRESHOLD:
+        if total_tokens <= MAX_CONTEXT_LENGTH * COMPRESS_THRESHOLD:
             return
         if len(self.messages) <= KEEP_MESSAGES_ON_COMPRESS:
             return
@@ -129,7 +123,8 @@ class Memory:
                 "role": "user",
                 "content": (
                     f"已有长期记忆：\n{long_term_memory}\n\n请压缩以上对话历史，并判断是否有值得长期记住的信息（用户偏好、关键事实、运行环境等等。注意排除已有的长期记忆）。\n"
-                    "只返回 JSON，包含 summary: 对话历史摘要总结 和 memory_update: 值得长期记忆的信息。"
+                    "只返回 JSON，不要使用 Markdown 代码块。"
+                    "JSON 包含 summary(摘要总结) 和 memory_update(值得长期记忆的信息) 两个字符串字段。"
                 ),
             },
         ])
