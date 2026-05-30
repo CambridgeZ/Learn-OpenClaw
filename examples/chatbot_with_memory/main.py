@@ -49,8 +49,8 @@ class ToolCallNode(Node):
         tool_calls = executor.parse_tool_calls(response)
         results = executor.execute_all(tool_calls)
 
-        for tc, result in zip(tool_calls, results):
-            print(f"  [Tool] 执行: {tc.name}({tc.arguments})")
+        for tool_call, result in zip(tool_calls, results):
+            print(f"  [Tool] 执行: {tool_call.name}({tool_call.arguments})")
             print(f"  [Tool] 结果: {result.content[:100]}...")
             memory.add_message(result.to_message())
 
