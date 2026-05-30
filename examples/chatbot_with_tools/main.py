@@ -17,11 +17,12 @@ SYSTEM_PROMPT = (
     "你是一个会调用工具的助手。"
     "当问题涉及最新信息、模型版本、产品发布时间或事实核验时，优先先调用 search 工具，再基于搜索结果回答。"
     "若问题是本地文件/代码相关，优先使用 read/grep/find/ls 等本地工具。"
+    "如果一轮回复中既需要向用户展示文字又需要继续调用工具，可以同时返回 content 和 tool_calls。"
 )
 
 
 class ChatNode(Node):
-    """发送消息给 LLM，获取响应（可能包含 tool_calls）"""
+    """调用 LLM，打印 assistant content，并按 tool_calls 决定是否继续。"""
 
     def exec(self, payload: Any) -> Tuple[str, Any]:
         messages = shared["messages"]
@@ -30,10 +31,16 @@ class ChatNode(Node):
         assistant_message = call_llm(messages=messages, tools=tools, system_prompt=SYSTEM_PROMPT)
         messages.append(assistant_message)
 
-        if assistant_message.get("tool_calls"):
+        content = assistant_message["content"]
+        tool_calls = assistant_message.get("tool_calls")
+
+        if content:
+            print(f"\n🤖 Assistant: {content}\n")
+
+        if tool_calls:
             return "tool_call", assistant_message
 
-        return "output", assistant_message
+        return "done", assistant_message
 
 
 class ToolCallNode(Node):
@@ -55,16 +62,6 @@ class ToolCallNode(Node):
         return "chat", None
 
 
-class OutputNode(Node):
-    """输出助手回复"""
-
-    def exec(self, payload: Any) -> Tuple[str, Any]:
-        response = payload
-        content = response.get("content", "")
-        print(f"\n🤖 Assistant: {content}\n")
-        return "default", None
-
-
 def run_chat() -> None:
     """运行对话循环"""
     print("=" * 60)
@@ -80,11 +77,9 @@ def run_chat() -> None:
 
     chat = ChatNode()
     tool_call = ToolCallNode()
-    output = OutputNode()
 
     chat - "tool_call" >> tool_call
     tool_call - "chat" >> chat
-    chat - "output" >> output
 
     while True:
         user_input = input("👤 You: ").strip()

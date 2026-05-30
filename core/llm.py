@@ -15,7 +15,7 @@ def call_llm_simple(prompt: str) -> str:
         base_url=os.environ.get("OPENAI_BASE_URL"),
     )
     response = client.chat.completions.create(
-        model="kimi-k2.5",
+        model=os.environ.get("OPENAI_MODEL_ID", "kimi-k2.5"),
         messages=[{"role": "user", "content": prompt}],
     )
     message = response.choices[0].message
@@ -36,7 +36,7 @@ def call_llm(
         msgs = [{"role": "system", "content": system_prompt}, *msgs]
 
     kwargs: dict[str, Any] = {
-        "model": "kimi-k2.5",
+        "model": os.environ.get("OPENAI_MODEL_ID", "kimi-k2.5"),
         "messages": msgs,
     }
     if tools:
