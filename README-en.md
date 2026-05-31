@@ -45,11 +45,17 @@ It can also help you land an agent-related job or internship. Quite a few studen
    - Practice: you can read the implementations in [`tools`](./tools) and [`examples/chatbot_with_tools`](./examples/chatbot_with_tools).
    - Summary: MCP is a Remote Tool, Skill is a Local Tool. Try not to over-design tools, and prefer solving problems with Linux `bash` whenever possible.
 
-5. Implement Context / Memory (about 1 minute)
-   - Short-term context: the complete recent conversation turns.
-   - Long-term context: earlier conversations, compressed after being summarized once.
-   - Memory = short-term context + long-term context
-
+5. Implement Context / Memory Management (approx. 25 minutes to read)
+   - Conversation Memory: append every user and assistant message to `chat_memory/session.jsonl`, so the program can continue from previous conversations after restarting.
+   - Long-term Memory: save user preferences, important facts, operating environment, and other information worth remembering to `chat_memory/MEMORY.md`.
+   - Memory = Conversation Memory + Long-term Memory. Conversation Memory remembers "what we just talked about"; Long-term Memory remembers "information that may still be useful later".
+   - Why Memory management is needed: the context window of an LLM is limited. As the conversation grows, it will eventually exceed what the model can accept. Before that happens, older messages need to be compressed into a summary.
+   - Summarization loses details, so we should not compress too early. The current implementation reads `usage.total_tokens` from the LLM API response and triggers compression when the token count exceeds 90% of the maximum context length.
+   - During compression, older messages are turned into one "conversation history summary", while the most recent messages are kept as-is. Since tool-call messages must appear as a complete group, the code avoids splitting an `assistant` message with `tool_calls` from its following `tool` results.
+   - We try to keep existing conversation content unchanged and append new messages to `session.jsonl`. This makes it easier for the model provider to hit the prefix KV Cache, so repeated context prefixes may be reused and generation can become faster.
+   - Practice: you can read the implementation in [`/core/memory.py`](./core/memory.py) and the [`/examples/chatbot_with_memory`](./examples/chatbot_with_memory) folder. After running the example, you can find `session.jsonl` and `MEMORY.md` in the default memory directory `chat_memory/`.
+   - Summary: Memory management mainly prevents the context from becoming too long; summarization lets the model still know what happened before; Long-term Memory saves important information separately from normal chat history.
+   
 6. Implement Multi-Agent / Subagent / Agent Teams (about 1 hour)
    - The original multi-agent idea was to use Google's A2A (agent-to-agent) protocol so agents in different places could talk to each other, but this idea largely failed. Multi-agent systems are often complex, and in many cases they perform worse than a simple single agent. In real-world usage, I have barely seen agents actually communicate through A2A.
    - However, people found that some scenarios do benefit from multi-agent setups: context isolation, returning only compressed results, and preventing the main context from being polluted by tool details. This can improve agent performance. You can read [How we built our multi-agent research system](https://www.anthropic.com/engineering/built-multi-agent-research-system) to understand what multi-agent is really about.

@@ -51,11 +51,17 @@
    - 实践：可以阅读[`tools`](./tools)和[`examples/chatbot_with_tools`](./examples/chatbot_with_tools)文件夹里的实现
    - 总结: MCP是Remote Tool，Skill是Local Tool，尽量不要设计Tool并且优先用linux的bash来解决问题
 
-5. 实现 Context / Memory（阅读需约1分钟）
-   - 短期 Context：最近几轮的完整对话
-   - 长期 Context：更早的对话，会"总结一次"进行压缩
-   - Memory = 短期 Context + 长期 Context
-
+5. 实现 Context / Memory 管理（阅读需约25分钟）
+   - 对话 Memory：把用户和助手的每条消息追加写入 `chat_memory/session.jsonl`，下次启动时可以继续接上之前的对话。
+   - 长期 Memory：把用户偏好、重要事实、运行环境等值得长期记住的信息写入 `chat_memory/MEMORY.md`。
+   - Memory = 对话 Memory + 长期 Memory。对话 Memory 负责“记住刚才聊了什么”，长期 Memory 负责“记住以后也可能有用的信息”。
+   - 为什么需要管理 Memory：大模型的上下文窗口有限，消息越聊越多，迟早会超过模型能接收的长度。所以在接近上下文上限前，需要把较早的对话压缩成摘要。
+   - 摘要压缩会丢失细节，所以不要太早压缩。当前实现会读取大模型 API 返回的 `usage.total_tokens`，当 token 数超过最大上下文长度的 90% 时触发压缩。
+   - 压缩时，较早的消息会变成一条“对话历史摘要”，最近几条消息会原样保留。因为工具调用消息必须成组出现，所以代码会避免把 `assistant` 的 `tool_calls` 和后续 `tool` 结果拆开。
+   - 我们尽量让已有对话内容保持不变，新消息追加写入 `session.jsonl`。这样更容易命中大模型服务商的 prefix KV Cache，让相同前缀的上下文复用缓存，生成速度可能更快。
+   - 实践：可以阅读[`/core/memory.py`](./core/memory.py)和[`/examples/chatbot_with_memory`](./examples/chatbot_with_memory)文件夹里的实现。运行示例后，可以在默认记忆目录 `chat_memory/` 下看到 `session.jsonl` 和 `MEMORY.md`。
+   - 总结：Memory 管理主要是为了防止上下文超长；摘要让模型还能知道之前发生过什么；长期记忆把重要信息从普通聊天记录里单独保存下来。
+   
 6. 实现 Multi-Agent / Subagent / Agent Teams （阅读需约1小时）
    - multi-agent最初设想用google制定的A2A(agent to agent)协议，让不同地方的Agent进行交互，但这个设想失败了，multi-agent效果复杂且大部分性能还不如简单的single agent，且现实中没看到过agent用A2A协议进行交互
    - 但大伙发现有些场景可以用multi-agent来实现上下文隔离、只回传压缩结果、避免主上下文被工具细节污染，这样能提高agent的效果，可以看这个blog了解multi-agent到底是什么[How we built our multi-agent research system](https://www.anthropic.com/engineering/built-multi-agent-research-system)
