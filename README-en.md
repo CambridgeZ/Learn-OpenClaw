@@ -11,7 +11,7 @@ It can also help you land an agent-related job or internship. Quite a few studen
 1. Get your own LLM API key (about 15 minutes)
    - You may need to learn some Python and [uv](https://docs.astral.sh/uv/getting-started/installation/). It is written in Rust, similar to Cargo in the Rust ecosystem, and it is extremely fast.
    - Why use `uv` instead of Conda: `uv` is open source and has no commercial licensing risk. Conda has [potential commercial licensing issues](https://www.anaconda.com/blog/is-conda-free) for organizations with more than 200 people.
-   - You will probably need an LLM API key. I recommend [Kimi](https://platform.moonshot.cn/docs/overview) or [Zhipu](https://open.bigmodel.cn).
+   - You will probably need an LLM API key. Recommended [OpenAI](https://platform.openai.com/api-keys).
    - Configure `OPENAI_API_KEY` and `OPENAI_BASE_URL`, then try running [`core/llm.py`](./core/llm.py).
 
 2. Implement Node / Workflow / Agent (about 1 hour)
@@ -80,11 +80,13 @@ It can also help you land an agent-related job or internship. Quite a few studen
 model.id = process.env.ANTHROPIC_MODEL_ID || "claude-sonnet-4-5";
 if (process.env.ANTHROPIC_BASE_URL) model.baseUrl = process.env.ANTHROPIC_BASE_URL;
 ```
-   - Prepare your LLM API credentials. Here is a [Kimi](https://www.moonshot.cn) example:
+   - Prepare your LLM API credentials. Here is an [Anthropic](https://console.anthropic.com/) example:
 ```
-export ANTHROPIC_MODEL_ID=kimi-k2.5
-export ANTHROPIC_BASE_URL=https://api.moonshot.cn/anthropic
-export ANTHROPIC_API_KEY=sk-m7q...
+export ANTHROPIC_API_KEY=sk-ant-...                     # required
+
+export ANTHROPIC_BASE_URL=https://api.anthropic.com     # optional (defaults to https://api.anthropic.com)
+
+export ANTHROPIC_MODEL_ID=claude-sonnet-4-5             # optional (for some third-party tools only)
 ```
    - Refer to this IM integration guide: [slack-bot-minimal-guide](https://github.com/badlogic/pi-mono/blob/3ffc2b43/packages/mom/docs/slack-bot-minimal-guide.md). A Feishu integration guide will be added later.
    - In `pi-mono`, run `npm install`, then start it with `pm2 start packages/mom/dist/main.js --name mom --interpreter node -- --sandbox=host ./packages/mom/data`
