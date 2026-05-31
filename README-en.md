@@ -84,6 +84,19 @@ export ANTHROPIC_API_KEY=sk-m7q...
    - In `pi-mono`, run `npm install`, then start it with `pm2 start packages/mom/dist/main.js --name mom --interpreter node -- --sandbox=host ./packages/mom/data`
    - Congratulations. You have now built your own OpenClaw, and you can chat with it on Slack.
 
+9. `/goal` unlocks long-running agents
+   - Earlier we built [`chatbot_with_tools`](./examples/chatbot_with_tools): the user sends one message, the agent searches, reads files, runs commands, and then replies.
+   - But it is still “one message, one run”. After it replies, that run is over.
+   - Long tasks should not work like that. If the goal is “raise test coverage to 90%”, it is wrong for the agent to run for a few minutes, reach 80%, and then stop waiting for you to push it.
+   - So we borrow Codex's `/goal` idea and give the agent a long-running goal. Once a goal is set, the agent keeps working around that goal until it is really done.
+   - For example, the user enters: `/goal raise test coverage to 90%`
+   - The program sets:
+     1. `goal = "raise test coverage to 90%"`
+     2. `goal_active = True`
+   - Later, whenever the agent stops by itself, if `goal_active` is still `True`, the program automatically reminds it to keep working on this goal.
+   - When the goal is done, the agent must call `goal_complete`. This tool sets `goal_active` to `False`, and then the goal loop ends.
+   - The minimal implementation is in [`examples/agent_with_goal`](./examples/agent_with_goal). It simply wraps the original tool agent with one extra `run_goal()` loop.
+
 ### Extra: Reach Interview / Internship Level (about 2 days * 8 hours)
 
 If you want an agent-related job or internship, or just want a deeper understanding of agents, you should definitely read this section.

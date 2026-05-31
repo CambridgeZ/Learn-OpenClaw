@@ -90,6 +90,19 @@ export ANTHROPIC_API_KEY=sk-m7q...
    - 运行`npm install`，然后启动`pm2 start packages/mom/dist/main.js --name mom --interpreter node -- --sandbox=host ./packages/mom/data`
    - 恭喜你！你已经打造了属于你自己的OpenClaw，你可以去到Slack上与你的OpenClaw聊
 
+9. /goal 解锁长时间运行的agent
+   - 前面我们已经实现了[`chatbot_with_tools`](./examples/chatbot_with_tools)：用户输入一句话，agent 搜索、读文件、运行命令，最后回复用户。
+   - 但它还是“一句话，跑一轮”。回复完，这一轮就结束了。
+   - 长任务不能这样。比如目标是“测试覆盖率达到 90%”，agent 跑了几分钟，做到 80% 就停下来等你催，这是不对的。
+   - 所以我们参考 Codex 的 `/goal`，给 agent 加一个长时间目标。设置了 goal 后，agent 就围绕这个 goal 一直跑，直到真的完成。
+   - 例如用户输入：`/goal 测试代码覆盖率达到90%`
+   - 程序会设置：
+     1. `goal = "测试代码覆盖率达到90%"`
+     2. `goal_active = True`
+   - 后面每次 agent 自己停下来，只要 `goal_active` 还是 `True`，程序就自动提醒它继续完成这个 goal。
+   - 如果目标完成了，agent 必须调用 `goal_complete`。这个 tool 会把 `goal_active` 改成 `False`，goal loop 才会结束。
+   - 最小实现可以看[`examples/agent_with_goal`](./examples/agent_with_goal)。这个例子只是在原来的工具 agent 外面包了一层 `run_goal()`。
+
 ### 额外内容：达到面试/实习要求 （学习需约 2天 * 8小时）
 
 如果你需要找Agent相关工作或者实习，又或者为了更深刻理解Agent，一定要看这一部分。
